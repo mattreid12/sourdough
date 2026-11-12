@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anatomy of a Sourdough Loaf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a food-magazine spread on a dark board. The loaf is the page; dials sit down the left like a recipe margin. */
+:root{
+  color-scheme: dark;
+  --bg:#191512; --surface:#231D18; --board:#2B241E; --ink:#F3EADA; --muted:#AC9D85; --line:#40372E;
+  --accent:#E3A84E; --good:#9CC27A; --warn:#E3A84E; --bad:#DD7A5C;
+  --display:"Fraunces",Georgia,serif;
+  --body:"Instrument Sans","Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14.5px;line-height:1.5}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+header{padding:22px 24px 14px;border-bottom:1px solid var(--line)}
+.kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 4px}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(28px,4.2vw,46px);line-height:1.05;margin:0;letter-spacing:-.02em;text-wrap:balance}
+header p.sub{color:var(--muted);margin:8px 0 0;max-width:66ch}
+main{display:grid;grid-template-columns:340px minmax(0,1fr);align-items:start}
+.controls{padding:18px 20px 24px 24px;border-right:1px solid var(--line);display:grid;gap:20px}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+legend{font-family:var(--display);font-size:19px;padding:0;margin-bottom:2px}
+.why{color:var(--muted);font-size:12.5px;margin:0 0 8px}
+.row{display:grid;grid-template-columns:86px 1fr 58px;gap:8px;align-items:center;margin:5px 0}
+.row label{font-size:13px}
+.row output{text-align:right;font-variant-numeric:tabular-nums;font-size:13px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.mix{display:flex;height:12px;border-radius:2px;overflow:hidden;margin:8px 0 6px;border:1px solid var(--line)}
+.mix i{display:block;height:100%}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chips button,.seg button,.btn{background:none;border:1px solid var(--line);border-radius:3px;padding:4px 9px;font-size:12.5px}
+.chips button:hover,.btn:hover{border-color:var(--muted)}
+.seg{display:flex;gap:5px;margin-bottom:6px}
+.seg button{flex:1}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.check{display:flex;gap:7px;align-items:center;font-size:12.5px;color:var(--muted);margin-top:4px}
+.stage{padding:18px 24px 26px;min-width:0;display:grid;gap:16px}
+.figure{background:radial-gradient(ellipse at 50% 60%,#3A3028 0%,var(--board) 55%,#221C17 100%);border:1px solid var(--line);position:relative}
+canvas{display:block;width:100%;height:clamp(300px,46vh,470px)}
+.figbar{position:absolute;top:10px;right:10px;display:flex;gap:6px}
+.figbar .btn{background:rgba(25,21,18,.7)}
+.verdict{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:22px;align-items:start}
+.verdict h2{font-family:var(--display);font-weight:400;font-size:clamp(24px,3vw,32px);line-height:1.1;margin:0 0 6px;letter-spacing:-.01em}
+.verdict h2 .dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:8px;vertical-align:middle;position:relative;top:-2px}
+.verdict p{margin:0 0 8px;max-width:60ch}
+.verdict .btn{border-color:var(--accent);color:var(--accent);margin-top:2px}
+.fixes{display:flex;flex-wrap:wrap;gap:8px}
+.verdict .bakehead{font-family:var(--display);font-size:20px;line-height:1.2;margin:0 0 10px}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:8px;vertical-align:middle;position:relative;top:-2px}
+.meters{display:grid;gap:9px}
+.meter{display:grid;grid-template-columns:92px 1fr;gap:10px;align-items:center;font-size:12.5px;color:var(--muted)}
+.bar{height:8px;background:var(--surface);border:1px solid var(--line);border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .35s}
+.chart{border-top:1px solid var(--line);padding-top:12px}
+.chart h3{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;font-weight:600}
+svg{display:block;width:100%;height:auto;max-width:640px}
+svg text{font-family:var(--body);font-size:10px;fill:var(--muted)}
+footer{padding:12px 24px 22px;color:var(--muted);font-size:12px;border-top:1px solid var(--line)}
+@media (max-width:900px){
+  main{grid-template-columns:1fr}
+  .stage{order:-1;padding:14px 16px 18px}
+  .controls{border-right:0;border-top:1px solid var(--line);padding:16px}
+  .verdict{grid-template-columns:1fr}
+  header{padding:18px 16px 12px}
+  canvas{height:clamp(250px,40vh,380px)}
+}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <p class="kicker">A loaf you can bake with dials</p>
+  <h1>Anatomy of a Sourdough Loaf</h1>
+  <p class="sub">Change the flour, the kitchen, the folds and the clock, and watch what comes out of the oven. A guide to cause and effect, not a promise about your starter.</p>
+</header>
+<main>
+  <form class="controls" id="controls" autocomplete="off">
+    <fieldset>
+      <legend>Flour</legend>
+      <p class="why">Wholemeal and rye ferment faster and bring flavour, but carry less gluten, so the loaf rises less.</p>
+      <div class="mix" id="mixbar" aria-hidden="true"></div>
+      <div class="row"><label for="wm">Wholemeal</label><input id="wm" type="range" min="0" max="100" step="5"><output id="wm_o"></output></div>
+      <div class="row"><label for="rye">Rye</label><input id="rye" type="range" min="0" max="100" step="5"><output id="rye_o"></output></div>
+      <div class="row"><span>White</span><span></span><output id="white_o"></output></div>
+      <div class="chips" id="presets"></div>
+    </fieldset>
+    <fieldset>
+      <legend>Water</legend>
+      <p class="why">Thirstier flours need more water. More than the flour can hold gives a slack dough that spreads.</p>
+      <div class="row"><label for="hyd">Hydration</label><input id="hyd" type="range" min="60" max="95" step="1"><output id="hyd_o"></output></div>
+      <label class="check"><input id="autohyd" type="checkbox"> Match hydration to the flour mix</label>
+    </fieldset>
+    <fieldset>
+      <legend>Kitchen</legend>
+      <p class="why">Every 5°C warmer cuts fermentation time by roughly a third.</p>
+      <div class="row"><label for="temp">Temperature</label><input id="temp" type="range" min="16" max="30" step="1"><output id="temp_o"></output></div>
+    </fieldset>
+    <fieldset>
+      <legend>Bulk fermentation</legend>
+      <p class="why">Each fold lines up the gluten so the dough can hold gas. The gain tails off after four.</p>
+      <div class="row"><label for="folds">Folds</label><input id="folds" type="range" min="0" max="6" step="1"><output id="folds_o"></output></div>
+      <div class="row"><label for="bulk">Bulk time</label><input id="bulk" type="range" min="2" max="14" step="0.25"><output id="bulk_o"></output></div>
+    </fieldset>
+    <fieldset>
+      <legend>Final prove</legend>
+      <p class="why">The fridge slows fermentation to a crawl and builds tang. The counter is quick and easy to overshoot.</p>
+      <div class="seg" id="mode"><button type="button" data-v="fridge">Fridge</button><button type="button" data-v="counter">Counter</button></div>
+      <div class="row"><label for="proof">Prove time</label><input id="proof" type="range"><output id="proof_o"></output></div>
+    </fieldset>
+    <fieldset>
+      <legend>Bake</legend>
+      <p class="why">A hot start gives oven spring. Time sets the crumb and colours the crust. A tin holds up doughs that would otherwise spread.</p>
+      <div class="seg" id="vessel"><button type="button" data-v="free">Free-form</button><button type="button" data-v="tin">Loaf tin</button></div>
+      <div class="row"><label for="oven">Oven (fan)</label><input id="oven" type="range" min="180" max="260" step="5"><output id="oven_o"></output></div>
+      <div class="row"><label for="bake">Bake time</label><input id="bake" type="range" min="20" max="75" step="1"><output id="bake_o"></output></div>
+      <label class="check"><input id="steam" type="checkbox"> Steam or a lidded pot for the first 20 minutes</label>
+    </fieldset>
+    <button type="button" class="btn" id="reset">Reset to the starting loaf</button>
+  </form>
+  <section class="stage">
+    <div class="figure">
+      <canvas id="cv" aria-label="Drawing of the baked loaf, whole and cut"></canvas>
+      <div class="figbar"><button type="button" class="btn" id="pin">Pin this loaf to compare</button></div>
+    </div>
+    <div class="verdict">
+      <div><h2 id="head"></h2><p class="bakehead" id="bakehead"></p><div id="text"></div><div class="fixes"><button type="button" class="btn" id="fix">Set the bulk time for me</button><button type="button" class="btn" id="fixbake">Set the bake time for me</button></div></div>
+      <div class="meters" id="meters"></div>
+    </div>
+    <div class="chart"><h3>Fermentation from mixing to oven</h3><div id="curve"></div></div>
+  </section>
+</main>
+<footer>A rule-of-thumb model: directions are reliable, timings are approximate. Assumes 20% starter used at its peak, a loaf from 500g of flour, and a fan oven.</footer>
+<script>
+const DEF={m:20,r:0,autoHyd:true,hyd:74,temp:24,folds:4,bulk:5.25,mode:"fridge",proof:12,vessel:"free",oven:230,bake:45,steam:true};
+let S={...DEF},pinned=null;
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
+const smooth=(x,a,b)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+const hrs=h=>{const H=Math.floor(h+1e-6),m=Math.round((h-H)*60);return m===60?(H+1)+"h":H+"h"+(m?" "+m+"m":"")};
+const PRESETS=[["All white",0,0],["80 / 20 wholemeal",20,0],["Country mix",20,10],["Half wholemeal",50,0],["Dark rye",20,50]];
+const C_CRUMB=[[239,224,191],[197,156,104],[134,101,74]],C_CRUST=[[156,92,44],[128,76,38],[92,60,40]];
+
+/* ---------- the model ---------- */
+function model(s){
+  const m=s.m/100,r=s.r/100,w=1-m-r,tin=s.vessel==="tin";
+  const hydAuto=Math.round(72+10*m+15*r),hyd=s.autoHyd?hydAuto:s.hyd;
+  const k=Math.pow(2.2,(s.temp-24)/10),ff=1+.25*m+.45*r;
+  const pB=s.bulk*k*ff/5.5,pP=s.mode==="fridge"?s.proof*Math.sqrt(ff)/12:s.proof*k*ff/1.25;
+  const ferm=.72*pB+.28*pP,lower=.9,upper=1.12-.08*r;
+  const over=Math.max(0,ferm-upper),under=Math.max(0,lower-ferm);
+  const G=w+.78*m+.3*r,fold=1-.38*(1-r)*Math.exp(-s.folds/1.8),d=hyd-hydAuto;
+  const hydF=d>0?Math.max(.6,1-.014*d):Math.min(1.06,1-.004*d);
+  const strength=clamp(G*fold*hydF*Math.max(.35,1-1.1*over),0,1);
+  const gas=ferm<1?smooth(ferm,.3,1):1;
+  // the bake
+  const bakeIdeal=45*(1-(s.oven-230)*.006),done=s.bake/bakeIdeal;
+  const spring=clamp(1-(230-s.oven)*.004,.72,1.05)*(s.steam?1:tin?.94:.85);
+  const tone=done*(1+(s.oven-230)*.003)*(s.steam?1:.93);
+  const gum=clamp((.88-done)/.3,0,1);
+  const height=tin?clamp(.34+.66*(.5+.5*strength)*(.3+.7*gas)*spring-.3*over,.25,1.05):clamp(.3+.7*strength*(.35+.65*gas)*spring-.25*over,.2,1);
+  const width=clamp(1+.45*(1-strength)+.006*(hyd-72),.95,1.6);
+  const ear=strength*Math.exp(-Math.pow((ferm-.93)/.2,2))*(1-.8*r)*(s.steam?1:.4)*clamp(1-(230-s.oven)*.006,.5,1.05)*(tin?.12:1);
+  const fermF=ferm<lower?.35+.65*smooth(ferm,.5,.9):over?Math.max(.45,1-1.2*over):1;
+  const open=clamp(Math.pow(strength,1.3)*(.3+.7*w)*(1+.015*(hyd-72))*fermF*(tin?.78:1)*(1-.25*gum),0,1);
+  const fridge=s.mode==="fridge";
+  const tang=clamp(.18+.3*(m+1.3*r)+(fridge?.3*Math.min(1,s.proof/24):.05)+.25*Math.max(0,ferm-.9)+(s.temp>26?.05:0),0,1);
+  const depth=clamp(.15+.55*(.9*m+1.2*r)+(fridge?.25*Math.min(1,s.proof/18):0)+.1*Math.min(1,ferm)+.16*clamp(tone-.9,0,.5),0,1);
+  const mix3=(c)=>{const ws=[w,m,r*1.3],t=ws[0]+ws[1]+ws[2];return [0,1,2].map(i=>(c[0][i]*ws[0]+c[1][i]*ws[1]+c[2][i]*ws[2])/t)};
+  const slump=clamp(over/.4,0,1);
+  let crust=mix3(C_CRUST).map((v,i)=>lerp(v,[190,146,98][i],slump*.5));
+  crust=tone<1?crust.map((v,i)=>lerp(v,[216,174,122][i],clamp((1-tone)/.45,0,1)*.78)):crust.map(v=>v*(1-clamp((tone-1)/.6,0,1)*.52));
+  const crumb=mix3(C_CRUMB).map(v=>v*(1-.1*gum));
+  return {w,m,r,hyd,hydAuto,d,k,ff,pB,pP,ferm,lower,upper,over,under,strength,height,width,ear,open,tang,depth,slump,tin:tin?1:0,isTin:tin,
+    done,bakeIdeal,tone,gum,crustT:clamp(.55+.5*done,.6,1.5)*(s.steam?1:1.2)*(tin?.8:1),
+    tunnels:clamp(under/.35,0,1),blowout:tin?0:clamp((.72-ferm)/.3,0,1)*strength,bran:clamp(m+r,0,1),crumb,crust,
+    bulkIdeal:(1-.28*pP)/.72*5.5/(k*ff)};
+}
+function verdict(M,s){
+  const out=[],T=M.isTin;let head,tone="good";
+  if(M.ferm<.75){head="Under-proved";tone="bad";out.push("The dough went into the oven before it had made enough gas. Expect a tight, gummy crumb with a few large tunnels, and a crust that may "+(T?"tear along one side.":"burst at the side."))}
+  else if(M.ferm<M.lower){head="Slightly under-proved";tone="warn";out.push(T?"Close, but short of the window. It will spring hard in the oven and may tear along the side, with a crumb that is a little tight.":"Close, but short of the window. Strong oven spring and a bold ear, with a crumb that is a little tight and uneven.")}
+  else if(M.ferm<=M.upper){head="Well proved";out.push("Fermentation has landed in the window, so the loaf has the gas and the strength to rise in the oven.")}
+  else if(M.ferm<=M.upper+.18){head="Slightly over-proved";tone="warn";out.push(T?"A little past its peak. The top is flat or slightly sunk and the crumb is even but small.":"A little past its peak. The loaf spreads, the ear is shy and the crumb is even but small.")}
+  else{head="Over-proved";tone="bad";out.push(T?"The dough ran out of strength before the bake. It has sunk in the tin, and the crumb is fine, crumbly and sour.":"The dough ran out of strength before the bake. It spreads flat, the score barely opens, and the crumb is fine, pale and sour.")}
+  const well=tone==="good",bi=M.bulkIdeal,diff=Math.abs(bi-s.bulk);
+  if(!well){
+    if(bi<2)out.push("The final prove alone is doing most of the fermenting. Shorten it, or cool the kitchen.");
+    else if(bi>14)out.push("At "+s.temp+"°C this dough needs more than 14 hours of bulk. A warmer spot is the easier fix.");
+    else out.push("At "+s.temp+"°C with this flour and prove, bulk wants about "+hrs(Math.round(bi*4)/4)+": "+(bi>s.bulk?"add":"take off")+" roughly "+hrs(Math.round(diff*4)/4)+(bi>s.bulk?", or find a warmer spot.":", or find a cooler spot."));
+  }
+  if(M.r>=.4){out.push("With this much rye there is little gluten to trap gas. A close, moist crumb is the style"+(T?", and the tin is what holds it up.":", and a tin would help it hold its shape."));if(well)head="Well proved, dense by nature"}
+  else if(M.d>6){out.push("The dough is wetter than this flour mix can comfortably hold"+(T?". The tin stops it spreading, though the crumb will be heavy.":", so it spreads."));if(well&&M.strength<.6&&!T){head="Well proved, but slack";tone="warn"}}
+  else if(!T&&s.folds<3&&M.over<.05){out.push((s.folds===0?"No folds":s.folds===1?"One fold":"Two folds")+" leaves this dough short of structure. Three or four would help it stand taller.");if(well&&s.folds<2){head="Well proved, but slack";tone="warn"}}
+  else if(T&&M.strength<.6&&M.over<.05)out.push("The tin is doing the work the gluten cannot, so this dough stands up instead of spreading.");
+  else if(well&&M.m+M.r>=.4)out.push("The wholegrain share costs some height and openness, and pays it back in flavour.");
+  if(s.temp>=28)out.push("A kitchen this warm moves fast: the gap between under and over is short.");
+  else if(s.temp<=18)out.push("A cool kitchen is slow but forgiving.");
+  // the bake
+  const bk=[],ideal=Math.round(M.bakeIdeal),gap=Math.abs(ideal-s.bake);let bhead,btone="good";
+  if(M.done<.7){bhead="Under-baked";btone="bad";bk.push("The centre has not set, so even a well-proved loaf cuts damp and gummy. At "+s.oven+"°C a loaf this size wants about "+ideal+" minutes.")}
+  else if(M.done<.88){bhead="Slightly under-baked";btone="warn";bk.push("A touch short: the crumb will be a little damp and the crust pale. Give it about "+gap+" more minutes.")}
+  else if(M.done<=1.2){bhead="Well baked";bk.push("The bake is on the mark: a set crumb and a well-coloured crust.")}
+  else if(M.done<=1.4){bhead="Boldly baked";btone="warn";bk.push("A dark, thick crust and a slightly dry crumb. Some bakers aim for this; if you do not, take off about "+gap+" minutes.")}
+  else{bhead="Over-baked";btone="bad";bk.push("The crust is hard and turning bitter, and the crumb is drying out. Take off about "+gap+" minutes, or lower the oven.")}
+  if(s.oven<=205&&!T)bk.push("A cooler oven also costs oven spring: the loaf sets before it has finished rising.");
+  if(!s.steam&&!T)bk.push("Without steam or a lid the crust sets early, which holds back the rise and mutes the ear.");
+  return {head,tone,out,bhead,btone,bk,canFix:!well&&bi>=2&&bi<=14,canFixBake:btone!=="good"&&ideal>=20&&ideal<=75,bakeIdeal:ideal};
+}
+
+/* ---------- stable crumb pattern ---------- */
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const rng=mulberry(7);
+const HOLES=[...Array(340)].map(()=>({u:rng(),v:rng()*.98,s:Math.pow(rng(),3),e:.7+rng()*.6,rot:(rng()-.5)*1.2}));
+const SPECK=[...Array(1100)].map(()=>({u:rng(),v:rng(),l:rng()<.5}));
+const BRAN=[...Array(520)].map(()=>({u:rng(),v:rng(),a:rng()*3.1}));
+const TUN=[[.3,.7,1],[.52,.78,1.25],[.7,.68,.9],[.42,.6,.6],[.62,.58,.7]];
+const rgb=(c,f=1,a=1)=>"rgba("+c.map(v=>Math.round(clamp(v*f,0,255))).join(",")+","+a+")";
+
+function outline(P,cx,yb,base,maxA,ins){
+  const n=2.5,N=90,F=[],Tn=[],tin=P.tin;
+  const aF=Math.min(base*P.width,maxA),hF=base*2*(.2+.42*P.height);
+  const aT=base*.8,wall=base*.82,hT=base*2*(.22+.42*P.height),side=Math.min(wall,hT*.88),crown=hT-side,ov=aT*.07*clamp((hT-wall)/(base*.3),0,1);
+  F.push([aF,0],[aF,0]);Tn.push([aT*.93,0],[aT,side*.97]);
+  for(let i=0;i<=N;i++){
+    const t=Math.PI*i/N,c=Math.cos(t),s=Math.sin(t),sg=Math.sign(c);
+    let x=aF*sg*Math.pow(Math.abs(c),2/n),y=hF*Math.pow(s,2/n);
+    y*=1-.2*P.slump*Math.exp(-Math.pow((t-Math.PI/2)/.6,2));
+    const u=(t-Math.PI*.4)/.2,saw=u>-1&&u<=0?Math.pow(u+1,1.5):u>0&&u<.18?1-u/.18:0;
+    y+=saw*hF*.11*P.ear;
+    x-=aF*.08*P.blowout*Math.exp(-Math.pow((t-.86*Math.PI)/.12,2));
+    F.push([x,y]);
+    Tn.push([(aT+ov)*sg*Math.pow(Math.abs(c),2/2.2),side+crown*Math.pow(s,2/2.2)*(1-.45*P.slump*Math.exp(-Math.pow((t-Math.PI/2)/.7,2)))]);
+  }
+  F.push([-aF,0],[-aF,0]);Tn.push([-aT,side*.97],[-aT*.93,0]);
+  const a=lerp(aF,aT+ov,tin),h=lerp(hF,hT,tin);
+  const pts=F.map((f,i)=>{let x=lerp(f[0],Tn[i][0],tin),y=lerp(f[1],Tn[i][1],tin);if(ins){x*=1-ins/a;y=y*(1-2.3*ins/h)+ins*1.15}return [cx+x,yb-y]});
+  return {pts,a,h,rim:yb-side};
+}
+function trace(ctx,pts){ctx.beginPath();pts.forEach((p,i)=>ctx[i?"lineTo":"moveTo"](p[0],p[1]));ctx.closePath()}
+function drawLoaf(ctx,P,box,cut){
+  const base=Math.min(box.w*.36,box.h*.62),cx=box.x+box.w/2,yb=box.y+box.h*.84,O=outline(P,cx,yb,base,box.w*.47),a=O.a,h=O.h,tin=P.tin;
+  ctx.save();
+  ctx.fillStyle="rgba(0,0,0,.38)";ctx.beginPath();ctx.ellipse(cx,yb+3,a*1.04,a*.07,0,0,6.3);ctx.fill();
+  const out=O.pts,g=ctx.createLinearGradient(0,yb-h,0,yb);
+  g.addColorStop(0,rgb(P.crust,1.12));g.addColorStop(.6,rgb(P.crust));g.addColorStop(1,rgb(P.crust,lerp(.62,1.12,tin)));
+  trace(ctx,out);ctx.fillStyle=g;ctx.fill();
+  if(!cut){
+    ctx.save();trace(ctx,out);ctx.clip();
+    if(tin<.98){ctx.strokeStyle="rgba(250,244,228,"+(.24*(1-tin))+")";ctx.lineWidth=a*.024;
+      for(let i=3;i<=12;i++){ctx.beginPath();ctx.ellipse(cx,yb-h*.1,a*i/12*1.08,h*i/12*1.16,0,Math.PI,2*Math.PI);ctx.stroke()}}
+    // the score: bloom and ear
+    const e=P.ear,bx=cx-a*.04,by=yb-h*(.8-.1*P.slump);
+    if(tin<.9){ctx.globalAlpha=1-tin;ctx.fillStyle=rgb(P.crust,1.42);ctx.beginPath();ctx.ellipse(bx,by,a*.6,h*.06*e+1,-.1,0,6.3);ctx.fill();
+      ctx.strokeStyle=rgb(P.crust,.5);ctx.lineWidth=1+a*.03*e;ctx.beginPath();ctx.ellipse(bx,by,a*.6,h*.06*e+1,-.1,Math.PI*1.02,Math.PI*1.98);ctx.stroke();ctx.globalAlpha=1}
+    if(tin>.1){ctx.fillStyle="rgba(244,214,160,"+(.2*tin)+")";ctx.fillRect(cx-a*1.2,O.rim,a*2.4,yb-O.rim);ctx.strokeStyle=rgb(P.crust,.6,.7*tin);ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(cx-a*1.2,O.rim);ctx.lineTo(cx+a*1.2,O.rim);ctx.stroke()}
+    if(P.r>.3){ctx.strokeStyle=rgb(P.crust,.5,clamp((P.r-.3)*2.5,0,1));ctx.lineWidth=1.2;
+      for(let i=0;i<7;i++){const x=cx-a*.7+a*1.4*(i+.5)/7;ctx.beginPath();ctx.moveTo(x,yb-h*.95);ctx.lineTo(x+a*.05*Math.sin(i*2.1),yb-h*.6);ctx.lineTo(x-a*.04,yb-h*.35);ctx.stroke()}}
+    const sh=ctx.createRadialGradient(cx,yb-h*.6,a*.2,cx,yb-h*.4,a*1.15);sh.addColorStop(0,"rgba(0,0,0,0)");sh.addColorStop(1,"rgba(0,0,0,.42)");ctx.fillStyle=sh;ctx.fillRect(cx-a*1.2,yb-h*1.3,a*2.4,h*1.4);
+    ctx.restore();ctx.restore();return;
+  }
+  const ct=Math.max(2.5,a*.035*P.crustT),inn=outline(P,cx,yb,base,box.w*.47,ct).pts;
+  ctx.save();trace(ctx,inn);ctx.clip();
+  ctx.fillStyle=rgb(P.crumb);ctx.fillRect(cx-a*1.2,yb-h*1.3,a*2.4,h*1.4);
+  const X=u=>cx-a+2*a*u,Y=v=>yb-h*v,unit=a/150;
+  for(const s of SPECK){ctx.fillStyle=s.l?rgb(P.crumb,1.1,.35):rgb(P.crumb,.82,.3);ctx.fillRect(X(s.u),Y(s.v),unit*1.6,unit*1.6)}
+  const nb=Math.round(BRAN.length*P.bran);ctx.fillStyle="rgba(96,62,36,.75)";
+  for(let i=0;i<nb;i++){const b=BRAN[i];ctx.beginPath();ctx.ellipse(X(b.u),Y(b.v),unit*1.7,unit*.8,b.a,0,6.3);ctx.fill()}
+  // gummy band of an under-proved loaf
+  if(P.tunnels>.02){const gg=ctx.createLinearGradient(0,yb-h*.3,0,yb);gg.addColorStop(0,rgb(P.crumb,.6,0));gg.addColorStop(1,rgb(P.crumb,.6,.6*P.tunnels));ctx.fillStyle=gg;ctx.fillRect(cx-a*1.2,yb-h*.3,a*2.4,h*.3)}
+  // damp centre of an under-baked loaf
+  if(P.gum>.02){const gc=ctx.createRadialGradient(cx,yb-h*.36,a*.05,cx,yb-h*.36,a*.75);gc.addColorStop(0,rgb(P.crumb,.55,.62*P.gum));gc.addColorStop(1,rgb(P.crumb,.55,0));ctx.fillStyle=gc;ctx.fillRect(cx-a*1.2,yb-h*1.3,a*2.4,h*1.4)}
+  const dark=rgb([P.crumb[0],P.crumb[1]*.94,P.crumb[2]*.82],.6),rim=rgb(P.crumb,1.14,.7),nh=Math.round(HOLES.length*(.42+.4*P.open));
+  for(let i=0;i<nh;i++){
+    const o=HOLES[i],s=lerp(o.s,.22,Math.max(P.slump*.8,tin*.35)),r=unit*(.7+s*(1.4+10.5*P.open)),rx=r*o.e*(1-.1*P.ear),ry=r/o.e*(1+.4*P.ear);
+    const x=X(o.u),y=Y(o.v);
+    ctx.fillStyle=dark;ctx.beginPath();ctx.ellipse(x,y,rx,ry,o.rot,0,6.3);ctx.fill();
+    if(r>unit*3){ctx.strokeStyle=rim;ctx.lineWidth=Math.max(.8,unit*.9);ctx.beginPath();ctx.ellipse(x,y,rx,ry,o.rot,.2,Math.PI-.2);ctx.stroke()}
+  }
+  if(P.tunnels>.03)for(const t of TUN){const r=a*.12*t[2]*P.tunnels;ctx.fillStyle=dark;ctx.beginPath();ctx.ellipse(X(t[0]),Y(t[1]*(.75+.25*P.height)),r*1.5,r*.8,-.15,0,6.3);ctx.fill();ctx.strokeStyle=rim;ctx.lineWidth=1.2;ctx.beginPath();ctx.ellipse(X(t[0]),Y(t[1]*(.75+.25*P.height)),r*1.5,r*.8,-.15,.2,Math.PI-.2);ctx.stroke()}
+  const sh=ctx.createRadialGradient(cx,yb-h*.5,a*.35,cx,yb-h*.5,a*1.1);sh.addColorStop(0,"rgba(60,30,10,0)");sh.addColorStop(1,"rgba(60,30,10,.4)");ctx.fillStyle=sh;ctx.fillRect(cx-a*1.2,yb-h*1.3,a*2.4,h*1.4);
+  ctx.restore();ctx.restore();
+}
+
+/* ---------- canvas ---------- */
+const cv=$("cv"),ctx=cv.getContext("2d");let cw=600,ch=400,D=null,Dp=null,T=null,raf=0;
+const KEYS=["height","width","ear","open","tunnels","slump","blowout","bran","r","tin","crustT","gum"];
+function step(d,t){let mv=false;for(const k of KEYS){const n=lerp(d[k],t[k],.16);if(Math.abs(n-t[k])>.002){mv=true;d[k]=n}else d[k]=t[k]}
+  for(const c of ["crumb","crust"])for(let i=0;i<3;i++){const n=lerp(d[c][i],t[c][i],.16);if(Math.abs(n-t[c][i])>.4){mv=true;d[c][i]=n}else d[c][i]=t[c][i]}return mv}
+const snap=m=>{const o={};KEYS.forEach(k=>o[k]=m[k]);o.crumb=[...m.crumb];o.crust=[...m.crust];return o};
+function frame(){raf=0;const mv=step(D,T);paint();if(mv)raf=requestAnimationFrame(frame)}
+function label(t,x,y,sub){ctx.textAlign="center";ctx.fillStyle="#AC9D85";ctx.font="600 10.5px 'Instrument Sans',Arial,sans-serif";ctx.fillText(t.toUpperCase().split("").join(" "),x,y);if(sub){ctx.font="11.5px 'Instrument Sans',Arial,sans-serif";ctx.fillText(sub,x,y+15)}}
+function paint(){
+  const dpr=window.devicePixelRatio||1;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,cw,ch);
+  const top=pinned?34:24,H=ch-top-(pinned?34:22);
+  if(pinned){
+    drawLoaf(ctx,Dp,{x:0,y:top,w:cw/2,h:H},true);drawLoaf(ctx,D,{x:cw/2,y:top,w:cw/2,h:H},true);
+    label("Pinned loaf",cw/4,ch-26,describe(pinned));label("This loaf",cw*3/4,ch-26,describe(S));
+    ctx.strokeStyle="#40372E";ctx.beginPath();ctx.moveTo(cw/2,20);ctx.lineTo(cw/2,ch-14);ctx.stroke();
+  }else{
+    const wl=cw*.44;drawLoaf(ctx,D,{x:0,y:top,w:wl,h:H},false);drawLoaf(ctx,D,{x:wl,y:top,w:cw-wl,h:H},true);
+    label("Whole",wl/2,ch-12);label("Cut",wl+(cw-wl)/2,ch-12);
+  }
+}
+function describe(s){const w=100-s.m-s.r;return (cw<560?"":w+"/"+s.m+"/"+s.r+" · ")+s.temp+"°C · "+s.folds+" folds · "+hrs(s.bulk)+" + "+hrs(s.proof)+(cw<700?"":" · "+(s.vessel==="tin"?"tin, ":"")+s.oven+"°C for "+s.bake+"m")}
+function resize(){const r=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;if(!r.width)return;cw=r.width;ch=r.height;cv.width=Math.round(cw*dpr);cv.height=Math.round(ch*dpr);paint()}
+
+/* ---------- chart ---------- */
+function curve(M,s){
+  const Wd=560,Hh=150,L=34,R=12,Tp=12,B=26,tot=s.bulk+s.proof,ymax=Math.max(1.5,M.ferm*1.1);
+  const x=t=>L+(Wd-L-R)*t/tot,y=v=>Hh-B-(Hh-B-Tp)*Math.min(v,ymax)/ymax,yb=.72*M.pB;
+  const col=M.ferm<M.lower||M.ferm>M.upper?(M.ferm<.75||M.ferm>M.upper+.18?"var(--bad)":"var(--warn)"):"var(--good)";
+  return '<svg viewBox="0 0 '+Wd+" "+Hh+'" role="img" aria-label="Fermentation over time against the ideal window">'
+   +'<rect x="'+L+'" y="'+y(M.upper)+'" width="'+(Wd-L-R)+'" height="'+(y(M.lower)-y(M.upper))+'" fill="#9CC27A" opacity=".16"/>'
+   +'<text x="'+(L+6)+'" y="'+(y(M.upper)-4)+'">ideal window</text>'
+   +'<line x1="'+L+'" y1="'+(Hh-B)+'" x2="'+(Wd-R)+'" y2="'+(Hh-B)+'" stroke="#40372E"/>'
+   +'<line x1="'+x(s.bulk)+'" y1="'+Tp+'" x2="'+x(s.bulk)+'" y2="'+(Hh-B)+'" stroke="#40372E" stroke-dasharray="3 3"/>'
+   +'<polyline fill="none" stroke="#F3EADA" stroke-width="2" stroke-linejoin="round" points="'+x(0)+","+y(0)+" "+x(s.bulk)+","+y(yb)+" "+x(tot)+","+y(M.ferm)+'"/>'
+   +'<circle cx="'+x(tot)+'" cy="'+y(M.ferm)+'" r="5.5" fill="'+col+'" stroke="#191512" stroke-width="2"/>'
+   +'<text x="'+x(0)+'" y="'+(Hh-9)+'">mix</text>'+(x(tot)-x(s.bulk)>110&&x(s.bulk)-L>70?'<text x="'+x(s.bulk)+'" y="'+(Hh-9)+'" text-anchor="middle">shape, '+hrs(s.bulk)+'</text>':"")+'<text x="'+x(tot)+'" y="'+(Hh-9)+'" text-anchor="end">bake, '+hrs(tot)+'</text>'
+   +'<text x="'+(x(s.bulk)/2+L/2)+'" y="'+(Tp+8)+'" text-anchor="middle">bulk, '+s.temp+'°C</text><text x="'+((x(s.bulk)+x(tot))/2)+'" y="'+(Tp+8)+'" text-anchor="middle">'+(s.mode==="fridge"?"fridge":"counter")+'</text></svg>';
+}
+
+/* ---------- controls ---------- */
+function proofRange(){const p=$("proof");if(S.mode==="fridge"){p.min=4;p.max=36;p.step=1}else{p.min=.25;p.max=5;p.step=.25}}
+function render(){
+  const M=model(S),w=100-S.m-S.r;
+  $("wm").value=S.m;$("rye").value=S.r;$("wm_o").textContent=S.m+"%";$("rye_o").textContent=S.r+"%";$("white_o").textContent=w+"%";
+  $("mixbar").innerHTML='<i style="width:'+w+'%;background:rgb(239,224,191)"></i><i style="width:'+S.m+'%;background:rgb(197,156,104)"></i><i style="width:'+S.r+'%;background:rgb(134,101,74)"></i>';
+  $("autohyd").checked=S.autoHyd;$("hyd").value=M.hyd;$("hyd").disabled=S.autoHyd;$("hyd_o").textContent=M.hyd+"%";
+  $("temp").value=S.temp;$("temp_o").textContent=S.temp+"°C";$("folds").value=S.folds;$("folds_o").textContent=S.folds;
+  $("bulk").value=S.bulk;$("bulk_o").textContent=hrs(S.bulk);proofRange();$("proof").value=S.proof;$("proof_o").textContent=hrs(S.proof);
+  document.querySelectorAll("#mode button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.mode));
+  document.querySelectorAll("#vessel button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.vessel));
+  $("oven").value=S.oven;$("oven_o").textContent=S.oven+"°C";$("bake").value=S.bake;$("bake_o").textContent=S.bake+" min";$("steam").checked=S.steam;
+  const V=verdict(M,S);
+  $("head").innerHTML='<span class="dot" style="background:var(--'+V.tone+')"></span>'+V.head;
+  $("bakehead").innerHTML='<span class="dot" style="background:var(--'+V.btone+')"></span>'+V.bhead;
+  $("text").innerHTML=[...V.out,...V.bk].map(t=>"<p>"+t+"</p>").join("");$("fix").style.display=V.canFix?"":"none";$("fixbake").style.display=V.canFixBake?"":"none";
+  $("meters").innerHTML=[["Rise",(M.height-.2)/.8],["Open crumb",M.open],["Ear",M.ear],["Crust colour",M.tone/1.7],["Tang",M.tang],["Depth of flavour",M.depth]].map(m=>'<div class="meter"><span>'+m[0]+'</span><div class="bar"><i style="width:'+Math.round(clamp(m[1],0,1)*100)+'%"></i></div></div>').join("");
+  $("curve").innerHTML=curve(M,S);
+  $("pin").textContent=pinned?"Unpin":"Pin this loaf to compare";
+  T=M;if(!D)D=snap(M);if(pinned)Dp=snap(model(pinned));
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches){D=snap(M);paint()}else if(!raf)raf=requestAnimationFrame(frame);
+}
+$("wm").oninput=e=>{S.m=+e.target.value;if(S.m+S.r>100)S.r=100-S.m;render()};
+$("rye").oninput=e=>{S.r=+e.target.value;if(S.m+S.r>100)S.m=100-S.r;render()};
+$("hyd").oninput=e=>{S.hyd=+e.target.value;render()};
+$("autohyd").onchange=e=>{S.autoHyd=e.target.checked;if(!S.autoHyd)S.hyd=model({...S,autoHyd:true}).hyd;render()};
+$("temp").oninput=e=>{S.temp=+e.target.value;render()};
+$("folds").oninput=e=>{S.folds=+e.target.value;render()};
+$("bulk").oninput=e=>{S.bulk=+e.target.value;render()};
+$("proof").oninput=e=>{S.proof=+e.target.value;render()};
+document.querySelectorAll("#mode button").forEach(b=>b.onclick=()=>{if(S.mode!==b.dataset.v){S.mode=b.dataset.v;S.proof=S.mode==="fridge"?12:1.25}render()});
+PRESETS.forEach(p=>{const b=document.createElement("button");b.type="button";b.textContent=p[0];b.onclick=()=>{S.m=p[1];S.r=p[2];render()};$("presets").appendChild(b)});
+document.querySelectorAll("#vessel button").forEach(b=>b.onclick=()=>{S.vessel=b.dataset.v;render()});
+$("oven").oninput=e=>{S.oven=+e.target.value;render()};
+$("bake").oninput=e=>{S.bake=+e.target.value;render()};
+$("steam").onchange=e=>{S.steam=e.target.checked;render()};
+$("fixbake").onclick=()=>{S.bake=clamp(Math.round(model(S).bakeIdeal),20,75);render()};
+$("reset").onclick=()=>{S={...DEF};render()};
+$("fix").onclick=()=>{S.bulk=clamp(Math.round(model(S).bulkIdeal*4)/4,2,14);render()};
+$("pin").onclick=()=>{pinned=pinned?null:{...S};render();paint()};
+$("controls").onsubmit=e=>e.preventDefault();
+render();resize();
+new ResizeObserver(resize).observe(cv);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(paint);
+</script>
+</body>
+</html>
